@@ -1,11 +1,17 @@
 #ifndef ANLOGGER_H
 #define ANLOGGER_H
 //PREREQUISITE: -std=c++11
+//NOTICE: Not Guarantee To Be Thread-Safe On Windows
 /************* Control Flags ****************************************************/
 //_anLoggerEnabled Is Zero => Logger Is Globally Disabled
 #define _anLoggerEnabled 1
 //_anLoggerEnabled Is Zero => Logger Message Is Not Verbosely Positioned
 #define _anPositionEnabled 1
+//_anLoggerSafeModeForWindowsEnabled is only used for windows
+//If _anLoggerSafeModeForWindowsEnabled Is Set,
+//Then Logger Message Text Attribute Is Disabled
+//In Return For Thread-Safe Operation
+#define _anLoggerSafeModeForWindowsEnabled 0
 /************* Performance Flags ************************************************/
 #define _anMessagePathTextAttribute anDefaultTextAttribute
 #define _anThreadIdPositionEnabled 1
@@ -22,7 +28,6 @@
 #include <thread>
 #include <chrono>
 #include <time.h>
-#include <mutex>
 #if defined _WINDOWS_ || defined __WINDOWS__\
         || defined _WIN16 || defined __TOS_WIN__\
         || defined _WIN32_WCE || defined _WIN32_WCE\
@@ -128,11 +133,15 @@ static const std::chrono::steady_clock::time_point anThisProgramStartingTimePoin
     #define _anGetConsoleTextAttribute(destination)\
         anGetCurrentConsoleTextAttribute(destination)
 
+    inline static const std::string anSetConsoleTextAttributeLinuxPrefixString(anTxtAttribType TxtAttrib) {
+        std::string tmp = u8"\033[";
+        tmp += std::to_string(TxtAttrib);
+        tmp += u8"m";
+        return tmp;
+    }
+
     #define anSetConsoleTextAttribute(TxtAttrib) {\
-        std::string tmp = u8"\033[";\
-        tmp += std::to_string(TxtAttrib);\
-        tmp += u8"m";\
-        fprintf(stderr, tmp.c_str());\
+        fprintf(stderr, anSetConsoleTextAttributeLinuxPrefixString(TxtAttrib).c_str());\
     }
 
     #define __anFilePathSlashChar__ u'/'
@@ -265,22 +274,22 @@ static const anTxtAttribType anOriginalConsoleTextAttribute = [](){
     #define anLogCode(...) __VA_ARGS__
 
 #ifdef __anQt__
-    #define anMsgInputToMsgString(msgIn,msgStr)\
-            std::string msgStr;\
+    #define anSaveMsgInputToAVar(msgIn,newMsgStrVar)\
+            std::string newMsgStrVar;\
             {\
-                QString * tmpQStrrBefore##msgStr = new QString(u8"");\
-                QTextStream(tmpQStrrBefore##msgStr, QIODevice::ReadWrite) << msgIn;\
-                msgStr = tmpQStrrBefore##msgStr->toStdString();\
-                delete tmpQStrrBefore##msgStr;\
-                tmpQStrrBefore##msgStr = Q_NULLPTR;\
+                QString * tmpQStrrBefore##newMsgStrVar = new QString(u8"");\
+                QTextStream(tmpQStrrBefore##newMsgStrVar, QIODevice::ReadWrite) << msgIn;\
+                newMsgStrVar = tmpQStrrBefore##newMsgStrVar->toStdString();\
+                delete tmpQStrrBefore##newMsgStrVar;\
+                tmpQStrrBefore##newMsgStrVar = Q_NULLPTR;\
             }
 #else
-    #define anMsgInputToMsgString(msgIn,msgStr)\
-            std::string msgStr;\
+    #define anSaveMsgInputToAVar(msgIn,newMsgStrVar)\
+            std::string newMsgStrVar;\
             {\
-                std::stringstream tmpStrStrmBefore##msgStr;\
-                tmpStrStrmBefore##msgStr << msgIn;\
-                msgStr = tmpStrStrmBefore##msgStr.str();\
+                std::stringstream tmpStrStrmBefore##newMsgStrVar;\
+                tmpStrStrmBefore##newMsgStrVar << msgIn;\
+                newMsgStrVar = tmpStrStrmBefore##newMsgStrVar.str();\
             }
 #endif
 
@@ -288,11 +297,73 @@ static const anTxtAttribType anOriginalConsoleTextAttribute = [](){
     inline static void anNoLineMessageLogger(const std::string &aNoLineMessage,
                                   const std::string &msgPath,
                                   const anTxtAttribType &preTxtAttrib) {
-        fprintf(stderr, aNoLineMessage.c_str());
-        anSetConsoleTextAttribute(_anMessagePathTextAttribute)
-        fprintf(stderr, msgPath.c_str());
-        anSetConsoleTextAttribute(preTxtAttrib)
+        #ifdef __anWINOS__
+            #if _anLoggerSafeModeForWindowsEnabled
+                std::string tmp = aNoLineMessage;
+                tmp += msgPath;
+                fprintf(stderr, tmp.c_str());
+            #else
+                fprintf(stderr, aNoLineMessage.c_str());
+                anSetConsoleTextAttribute(_anMessagePathTextAttribute)
+                fprintf(stderr, msgPath.c_str());
+                anSetConsoleTextAttribute(preTxtAttrib)
+            #endif
+        #elif defined __anLINUXOS__
+            std::string tmp = aNoLineMessage;
+            tmp += anSetConsoleTextAttributeLinuxPrefixString(_anMessagePathTextAttribute);
+            tmp += msgPath;
+            tmp += anSetConsoleTextAttributeLinuxPrefixString(preTxtAttrib);
+            fprintf(stderr, tmp.c_str());
+        #endif
     }
+
+
+    #if defined __anWINOS__ && _anLoggerSafeModeForWindowsEnabled
+        #define anMsg(msg, aTextAttribute) {\
+            std::string currentMessagePath = __anMessagePath__;\
+            anSaveMsgInputToAVar(msg, tmpMsgStr)\
+            anColorizedMessageLogger(tmpMsgStr, aTextAttribute, currentMessagePath, prevTxtAttrib);\
+            std::cerr.flush();\
+        }
+    #else
+        #define anMsg(msg, aTextAttribute) {\
+            anTxtAttribType prevTxtAttrib = 0;\
+            if (!(_anGetConsoleTextAttribute(prevTxtAttrib)))\
+                prevTxtAttrib = anOriginalConsoleTextAttribute;\
+            std::string currentMessagePath = __anMessagePath__;\
+            anSaveMsgInputToAVar(msg, tmpMsgStr)\
+            anColorizedMessageLogger(tmpMsgStr, aTextAttribute, currentMessagePath, prevTxtAttrib);\
+            std::cerr.flush();\
+        }
+    #endif
+
+
+#else
+
+    #define anMsg(msg, txtAttrib) {\
+        anTxtAttribType previousTxtAttrib = 0;\
+        if (!(_anGetConsoleTextAttribute(previousTxtAttrib)))\
+            previousTxtAttrib = anOriginalConsoleTextAttribute;\
+        anSetConsoleTextAttribute(txtAttrib)\
+        anSaveMsgInputToAVar(msg, tmp)\
+        fprintf(stderr, tmp.c_str());\
+        anSetConsoleTextAttribute(previousTxtAttrib)\
+        std::cerr.flush();\
+    }
+#endif
+
+#if !defined __anWINOS__ || !_anLoggerSafeModeForWindowsEnabled
+    #define anTmpSaveTextAttributeToAVar(newTxtAtribVar) \
+        anTxtAttribType newTxtAtribVar = 0;\
+        if (!(_anGetConsoleTextAttribute(newTxtAtribVar)))\
+            newTxtAtribVar = __anOriginalConsoleTextAttribute__;
+#else
+    #define anTmpSaveTextAttributeToAVar(newTxtAtribVar)
+#endif
+
+#ifdef _anPositionDisabled
+    #define anTmpSaveCurrentMessagePathToAVar(newStrVar)
+#else
     inline static void anColorizedMessageLogger(std::string &rawMsgStr,
                                          const anTxtAttribType &txtAttrib,
                                          const std::string &currentMsgPath,
@@ -311,29 +382,16 @@ static const anTxtAttribType anOriginalConsoleTextAttribute = [](){
             anNoLineMessageLogger(rawMsgStr,nowPath,txtAttrib);
         anSetConsoleTextAttribute(previousTxtAttrib)
     }
-
-    #define anMsg(msg, aTextAttribute) {\
-        std::string currentMessagePath = __anMessagePath__;\
-        anTxtAttribType prevTxtAttrib = 0;\
-        if (!(_anGetConsoleTextAttribute(prevTxtAttrib)))\
-            prevTxtAttrib = anOriginalConsoleTextAttribute;\
-        anMsgInputToMsgString(msg, tmpMsgStr)\
-        anColorizedMessageLogger(tmpMsgStr, aTextAttribute, currentMessagePath, prevTxtAttrib);\
-        std::cerr.flush();\
-    }
-#else
-
-    #define anMsg(msg, txtAttrib) {\
-        anTxtAttribType previousTxtAttrib = 0;\
-        if (!(_anGetConsoleTextAttribute(previousTxtAttrib)))\
-            previousTxtAttrib = anOriginalConsoleTextAttribute;\
-        anSetConsoleTextAttribute(txtAttrib)\
-        anMsgInputToMsgString(msg, tmp)\
-        fprintf(stderr, tmp.c_str());\
-        anSetConsoleTextAttribute(previousTxtAttrib)\
-        std::cerr.flush();\
-    }
+    #define anTmpSaveCurrentMessagePathToAVar(newStrVar) \
+        std::string newStrVar = __anMessagePath__;
 #endif
+
+#define anMsg(msg, txtAttrib) {\
+        anTmpSaveCurrentMessagePathToAVar(oldTxtAttrib)\
+        anTmpSaveCurrentMessagePathToAVar(nowMsgPathStr)\
+        anSaveMsgInputToAVar(msg, tmpMsgInputStr)\
+        std::cerr.flush();\
+    }
 
 #define anDbg(msg, condition) if (condition)\
                                 anMsg(u8"=> " << msg << u8"\n", anForegroundCyan)
@@ -349,5 +407,10 @@ static const anTxtAttribType anOriginalConsoleTextAttribute = [](){
 #else
     #define anLogCode(...)
     #define anMsg(msg)
+    #define anDbg(msg, condition)
+    #define anInfo(msg)
+    #define anAck(msg)
+    #define anWarning(msg)
+    #define anError(msg)
 #endif
 #endif // ANLOGGER_H

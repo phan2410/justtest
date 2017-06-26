@@ -3,6 +3,13 @@
 #include <iostream>
 #include "anlogger.h"
 
+#define defonly
+#define abcTest 0
+
+#if  defined defonly && ! abcTest
+
+#endif
+
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
