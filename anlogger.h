@@ -133,7 +133,7 @@ static const std::chrono::steady_clock::time_point anThisProgramStartingTimePoin
     #define _anGetConsoleTextAttribute(destination)\
         anGetCurrentConsoleTextAttribute(destination)
 
-    inline static const std::string anSetConsoleTextAttributeLinuxPrefixString(anTxtAttribType TxtAttrib) {
+    inline static const std::string anSetConsoleTextAttributePrefixString(anTxtAttribType TxtAttrib) {
         std::string tmp = u8"\033[";
         tmp += std::to_string(TxtAttrib);
         tmp += u8"m";
@@ -141,7 +141,7 @@ static const std::chrono::steady_clock::time_point anThisProgramStartingTimePoin
     }
 
     #define anSetConsoleTextAttribute(TxtAttrib) {\
-        fprintf(stderr, anSetConsoleTextAttributeLinuxPrefixString(TxtAttrib).c_str());\
+        fprintf(stderr, anSetConsoleTextAttributePrefixString(TxtAttrib).c_str());\
     }
 
     #define __anFilePathSlashChar__ u'/'
@@ -169,17 +169,14 @@ static const anTxtAttribType anOriginalConsoleTextAttribute = [](){
     #endif
 
     #if _anFilePositionEnabled
-
         inline static const std::string anGetCurrentFileName(const std::string &currentFilePath) {
             return currentFilePath.substr(
                         currentFilePath.find_last_of(__anFilePathSlashChar__)+1);
         }
         #define __anFILENAME__ anGetCurrentFileName(__FILE__)
-
     #endif
 
     #if _anTimePositionEnabled
-
         #define __anElapsedTimeNSEC__\
             std::chrono::duration_cast<std::chrono::nanoseconds>(\
                 std::chrono::steady_clock::now() - __anStartTimePoint__).count()
@@ -187,16 +184,35 @@ static const anTxtAttribType anOriginalConsoleTextAttribute = [](){
 
     inline static const std::string anCurrentMessagePath(
             #if _anTimePositionEnabled
-                const unsigned long int &currentElapsedTime,
+                #if _anFunctionPositionEnabled || _anFilePositionEnabled\
+                    || _anLinePositionEnabled || _anThreadIdPositionEnabled
+                    const unsigned long int &currentElapsedTime,
+                #else
+                    const unsigned long int &currentElapsedTime
+                #endif
             #endif
             #if _anThreadIdPositionEnabled
-                const std::string &currentThreadIdStr,
+                #if _anFunctionPositionEnabled || _anFilePositionEnabled\
+                    || _anLinePositionEnabled
+                    const std::string &currentThreadIdStr,
+                #else
+                    const std::string &currentThreadIdStr
+                #endif
             #endif
             #if _anFunctionPositionEnabled
-                const std::string &currentFunctionName,
+                #if _anFilePositionEnabled || _anLinePositionEnabled
+                    const std::string &currentFunctionName,
+                #else
+                    const std::string &currentFunctionName
+                #endif
+
             #endif
             #if _anFilePositionEnabled
-                const std::string &currentFileName,
+                #if _anLinePositionEnabled
+                    const std::string &currentFileName,
+                #else
+                    const std::string &currentFileName
+                #endif
             #endif
             #if _anLinePositionEnabled
                 const unsigned int &currentLine
@@ -228,41 +244,58 @@ static const anTxtAttribType anOriginalConsoleTextAttribute = [](){
     }
 
     #if _anTimePositionEnabled
-        #define anTmpTimeParam __anElapsedTimeNSEC__,
+        #if _anFunctionPositionEnabled || _anFilePositionEnabled\
+            || _anLinePositionEnabled || _anThreadIdPositionEnabled
+            #define anTmpTimeParamForMsgPathMacro __anElapsedTimeNSEC__,
+        #else
+            #define anTmpTimeParamForMsgPathMacro __anElapsedTimeNSEC__
+        #endif
     #else
-        #define anTmpTimeParam
+        #define anTmpTimeParamForMsgPathMacro
     #endif
 
     #if _anThreadIdPositionEnabled
-        #define anTmpThreadIdParam __anThreadIdStr__,
+        #if _anFunctionPositionEnabled || _anFilePositionEnabled || _anLinePositionEnabled
+            #define anTmpThreadIdParamForMsgPathMacro __anThreadIdStr__,
+        #else
+            #define anTmpThreadIdParamForMsgPathMacro __anThreadIdStr__
+        #endif
     #else
-        #define anTmpThreadIdParam
+        #define anTmpThreadIdParamForMsgPathMacro
     #endif
 
     #if _anFunctionPositionEnabled
-        #define anTmpFunctionParam __PRETTY_FUNCTION__,
+        #if _anFilePositionEnabled || _anLinePositionEnabled
+            #define anTmpFunctionParamForMsgPathMacro __PRETTY_FUNCTION__,
+        #else
+            #define anTmpFunctionParamForMsgPathMacro __PRETTY_FUNCTION__
+        #endif
     #else
-        #define anTmpFunctionParam
+        #define anTmpFunctionParamForMsgPathMacro
     #endif
 
     #if _anFilePositionEnabled
-        #define anTmpFileNameParam __anFILENAME__,
+        #if _anLinePositionEnabled
+            #define anTmpFileNameParamForMsgPathMacro __anFILENAME__,
+        #else
+            #define anTmpFileNameParamForMsgPathMacro __anFILENAME__
+        #endif
     #else
-        #define anTmpFileNameParam
+        #define anTmpFileNameParamForMsgPathMacro
     #endif
 
     #if _anLinePositionEnabled
-        #define anTmpLineParam __LINE__
+        #define anTmpLineParamForMsgPathMacro __LINE__
     #else
-        #define anTmpLineParam
+        #define anTmpLineParamForMsgPathMacro
     #endif
 
     #define __anMessagePath__\
-        anCurrentMessagePath(anTmpTimeParam\
-                             anTmpThreadIdParam\
-                             anTmpFunctionParam\
-                             anTmpFileNameParam\
-                             anTmpLineParam)
+        anCurrentMessagePath(anTmpTimeParamForMsgPathMacro\
+                             anTmpThreadIdParamForMsgPathMacro\
+                             anTmpFunctionParamForMsgPathMacro\
+                             anTmpFileNameParamForMsgPathMacro\
+                             anTmpLineParamForMsgPathMacro)
 
 #else
     #define _anPositionDisabled
@@ -271,10 +304,9 @@ static const anTxtAttribType anOriginalConsoleTextAttribute = [](){
 /********************************************************************************/
 #if _anLoggerEnabled
 /********************************************************************************/
-    #define anLogCode(...) __VA_ARGS__
 
 #ifdef __anQt__
-    #define anSaveMsgInputToAVar(msgIn,newMsgStrVar)\
+    #define anTmpSaveMsgInputToAStdStrVar(msgIn,newMsgStrVar)\
             std::string newMsgStrVar;\
             {\
                 QString * tmpQStrrBefore##newMsgStrVar = new QString(u8"");\
@@ -284,7 +316,7 @@ static const anTxtAttribType anOriginalConsoleTextAttribute = [](){
                 tmpQStrrBefore##newMsgStrVar = Q_NULLPTR;\
             }
 #else
-    #define anSaveMsgInputToAVar(msgIn,newMsgStrVar)\
+    #define anTmpSaveMsgInputToAStdStrVar(msgIn,newMsgStrVar)\
             std::string newMsgStrVar;\
             {\
                 std::stringstream tmpStrStrmBefore##newMsgStrVar;\
@@ -293,117 +325,256 @@ static const anTxtAttribType anOriginalConsoleTextAttribute = [](){
             }
 #endif
 
-#ifndef _anPositionDisabled
-    inline static void anNoLineMessageLogger(const std::string &aNoLineMessage,
-                                  const std::string &msgPath,
-                                  const anTxtAttribType &preTxtAttrib) {
-        #ifdef __anWINOS__
-            #if _anLoggerSafeModeForWindowsEnabled
-                std::string tmp = aNoLineMessage;
-                tmp += msgPath;
-                fprintf(stderr, tmp.c_str());
-            #else
-                fprintf(stderr, aNoLineMessage.c_str());
-                anSetConsoleTextAttribute(_anMessagePathTextAttribute)
-                fprintf(stderr, msgPath.c_str());
-                anSetConsoleTextAttribute(preTxtAttrib)
-            #endif
-        #elif defined __anLINUXOS__
-            std::string tmp = aNoLineMessage;
-            tmp += anSetConsoleTextAttributeLinuxPrefixString(_anMessagePathTextAttribute);
-            tmp += msgPath;
-            tmp += anSetConsoleTextAttributeLinuxPrefixString(preTxtAttrib);
-            fprintf(stderr, tmp.c_str());
-        #endif
-    }
-
-
-    #if defined __anWINOS__ && _anLoggerSafeModeForWindowsEnabled
-        #define anMsg(msg, aTextAttribute) {\
-            std::string currentMessagePath = __anMessagePath__;\
-            anSaveMsgInputToAVar(msg, tmpMsgStr)\
-            anColorizedMessageLogger(tmpMsgStr, aTextAttribute, currentMessagePath, prevTxtAttrib);\
-            std::cerr.flush();\
-        }
-    #else
-        #define anMsg(msg, aTextAttribute) {\
-            anTxtAttribType prevTxtAttrib = 0;\
-            if (!(_anGetConsoleTextAttribute(prevTxtAttrib)))\
-                prevTxtAttrib = anOriginalConsoleTextAttribute;\
-            std::string currentMessagePath = __anMessagePath__;\
-            anSaveMsgInputToAVar(msg, tmpMsgStr)\
-            anColorizedMessageLogger(tmpMsgStr, aTextAttribute, currentMessagePath, prevTxtAttrib);\
-            std::cerr.flush();\
-        }
-    #endif
-
-
+#if defined __anWINOS__ && !_anLoggerSafeModeForWindowsEnabled
+    #define anTmpOutputMsgStrVarDeclaration
+    #define anTmpOutputMsgStrVarToStdErr
 #else
-
-    #define anMsg(msg, txtAttrib) {\
-        anTxtAttribType previousTxtAttrib = 0;\
-        if (!(_anGetConsoleTextAttribute(previousTxtAttrib)))\
-            previousTxtAttrib = anOriginalConsoleTextAttribute;\
-        anSetConsoleTextAttribute(txtAttrib)\
-        anSaveMsgInputToAVar(msg, tmp)\
-        fprintf(stderr, tmp.c_str());\
-        anSetConsoleTextAttribute(previousTxtAttrib)\
-        std::cerr.flush();\
-    }
+    #define anTmpOutputMsgStrVar tmpOutputMsgStr
+    #define anTmpOutputMsgStrVarDeclaration\
+        std::string anTmpOutputMsgStrVar;
+    #define anTmpOutputMsgStrVarToStdErr\
+        fprintf(stderr, anTmpOutputMsgStrVar.c_str());
 #endif
 
-#if !defined __anWINOS__ || !_anLoggerSafeModeForWindowsEnabled
-    #define anTmpSaveTextAttributeToAVar(newTxtAtribVar) \
-        anTxtAttribType newTxtAtribVar = 0;\
-        if (!(_anGetConsoleTextAttribute(newTxtAtribVar)))\
-            newTxtAtribVar = __anOriginalConsoleTextAttribute__;
+#if defined __anWINOS__ && _anLoggerSafeModeForWindowsEnabled
+    #define anTmpSaveTextAttributeToATxtAtribVar
 #else
-    #define anTmpSaveTextAttributeToAVar(newTxtAtribVar)
+    #define anTmpPrevTxtAtribVar tmpPrevTxtAtribVar
+    #define anTmpSaveTextAttributeToATxtAtribVar\
+        anTxtAttribType anTmpPrevTxtAtribVar = __anOriginalConsoleTextAttribute__;\
+        _anGetConsoleTextAttribute(anTmpPrevTxtAtribVar);
 #endif
 
 #ifdef _anPositionDisabled
-    #define anTmpSaveCurrentMessagePathToAVar(newStrVar)
+    #define anTmpSaveCurrentMessagePathToAMsgPathStrVar
 #else
-    inline static void anColorizedMessageLogger(std::string &rawMsgStr,
-                                         const anTxtAttribType &txtAttrib,
-                                         const std::string &currentMsgPath,
-                                         const anTxtAttribType &previousTxtAttrib) {
-        anSetConsoleTextAttribute(txtAttrib)
+    #define anTmpCurrentMessagePathStrVar aNowMsgPathStrVar
+    #define anTmpSaveCurrentMessagePathToAMsgPathStrVar\
+        std::string anTmpCurrentMessagePathStrVar = __anMessagePath__;
+#endif
+
+inline static void anTmpNoLineMessageLogger(
+                                    #if defined anTmpPrevTxtAtribVar\
+                                            || defined anTmpCurrentMessagePathStrVar\
+                                            || defined anTmpOutputMsgStrVar
+                                          const std::string &aNoLineMessage,
+                                    #else
+                                          const std::string &aNoLineMessage
+                                    #endif
+                                    #ifdef anTmpOutputMsgStrVar
+                                        #if defined anTmpPrevTxtAtribVar\
+                                                || defined anTmpCurrentMessagePathStrVar
+                                            std::string &destMsgStr,
+                                        #else
+                                            std::string &destMsgStr
+                                        #endif
+                                    #endif
+                                    #ifdef anTmpCurrentMessagePathStrVar
+                                        #ifdef anTmpPrevTxtAtribVar
+                                            const std::string &msgPath,
+                                        #else
+                                            const std::string &msgPath
+                                        #endif
+                                    #endif
+                                    #ifdef anTmpPrevTxtAtribVar
+                                            const anTxtAttribType &prePathAttrib
+                                    #endif
+                                            ) {
+    #ifdef anTmpOutputMsgStrVar
+        destMsgStr += aNoLineMessage;
+        #ifdef anTmpCurrentMessagePathStrVar
+            #ifdef anTmpPrevTxtAtribVar
+                destMsgStr += anSetConsoleTextAttributePrefixString(_anMessagePathTextAttribute);
+            #endif
+            destMsgStr += msgPath;
+            #ifdef anTmpPrevTxtAtribVar
+                destMsgStr += anSetConsoleTextAttributePrefixString(prePathAttrib);
+            #endif
+        #endif
+    #else
+        fprintf(stderr, aNoLineMessage.c_str());
+        std::cerr.flush();
+        #ifdef anTmpCurrentMessagePathStrVar
+            #ifdef anTmpPrevTxtAtribVar
+                anSetConsoleTextAttribute(_anMessagePathTextAttribute);
+            #endif
+            fprintf(stderr, msgPath.c_str());
+            std::cerr.flush();
+            #ifdef anTmpPrevTxtAtribVar
+                anSetConsoleTextAttribute(prePathAttrib)
+            #endif
+        #endif
+    #endif
+}
+
+#if defined anTmpPrevTxtAtribVar\
+        || defined anTmpCurrentMessagePathStrVar\
+        || defined anTmpOutputMsgStrVar
+    #define anTmpNoLineMsgParamForNoLineMacro(noLineMsgVar) noLineMsgVar,
+#else
+    #define anTmpNoLineMsgParamForNoLineMacro(noLineMsgVar) noLineMsgVar
+#endif
+
+#ifdef anTmpOutputMsgStrVar
+    #if defined anTmpPrevTxtAtribVar\
+            || defined anTmpCurrentMessagePathStrVar
+        #define anTmpOutputMsgStrParamForNoLineMacro(destStr) destStr,
+    #else
+        #define anTmpOutputMsgStrParamForNoLineMacro(destStr) destStr
+    #endif
+#else
+    #define anTmpOutputMsgStrParamForNoLineMacro(destStr)
+#endif
+
+#ifdef anTmpCurrentMessagePathStrVar
+    #ifdef anTmpPrevTxtAtribVar
+        #define anTmpMsgPathParamForNoLineMacro(pathStr) pathStr,
+    #else
+        #define anTmpMsgPathParamForNoLineMacro(pathStr) pathStr
+    #endif
+#else
+    #define anTmpMsgPathParamForNoLineMacro(pathStr)
+#endif
+
+#ifdef anTmpPrevTxtAtribVar
+        #define anTmpPrevTxtAtribVarParamForNoLineMacro(prePathTxtAttrib) prePathTxtAttrib
+#else
+    #define anTmpPrevTxtAtribVarParamForNoLineMacro(prePathTxtAttrib)
+#endif
+
+#define anTmpNoLineMessageLoggerMacro(noLineMsgVar, outStr, msgPath, preTxtAtt)\
+    anTmpNoLineMessageLogger(anTmpNoLineMsgParamForNoLineMacro(noLineMsgVar)\
+                             anTmpOutputMsgStrParamForNoLineMacro(outStr)\
+                             anTmpMsgPathParamForNoLineMacro(msgPath)\
+                             anTmpPrevTxtAtribVarParamForNoLineMacro(preTxtAtt));
+
+inline static void anTmpMessageLogger(
+                                #if defined anTmpPrevTxtAtribVar\
+                                        || defined anTmpCurrentMessagePathStrVar\
+                                        || defined anTmpOutputMsgStrVar
+                                      std::string &rawMsgStr,
+                                #else
+                                      std::string &rawMsgStr
+                                #endif
+                                #ifdef anTmpOutputMsgStrVar
+                                    #if defined anTmpPrevTxtAtribVar\
+                                          || defined anTmpCurrentMessagePathStrVar
+                                      std::string &destMsgStr,
+                                    #else
+                                      std::string &destMsgStr
+                                    #endif
+                                #endif
+                                #ifdef anTmpPrevTxtAtribVar
+                                      const anTxtAttribType &txtAttrib,
+                                    #ifdef anTmpCurrentMessagePathStrVar
+                                      const anTxtAttribType &previousTxtAttrib,
+                                    #else
+                                      const anTxtAttribType &previousTxtAttrib
+                                    #endif
+                                #endif
+                                #ifdef anTmpCurrentMessagePathStrVar
+                                      const std::string &currentMsgPath
+                                #endif
+                                      ) {
+    #ifdef anTmpOutputMsgStrVar
+        #ifdef anTmpPrevTxtAtribVar
+            destMsgStr += anSetConsoleTextAttributePrefixString(_anMessagePathTextAttribute);
+        #endif
+    #else
+        #ifdef anTmpPrevTxtAtribVar
+            anSetConsoleTextAttribute(txtAttrib)
+        #endif
+    #endif
+    #ifdef anTmpCurrentMessagePathStrVar
         std::string nowPath = u8"<-";
         nowPath += currentMsgPath;
         std::string tmpPath = nowPath;
         tmpPath += u8"\n";
-        for(std::string::size_type i = 0;(i = rawMsgStr.find(u8"\n", 0)) != std::string::npos;)
-        {
-            anNoLineMessageLogger(rawMsgStr.substr(0,i++),tmpPath,txtAttrib);
-            rawMsgStr = rawMsgStr.substr(i);
-        }
-        if (!rawMsgStr.empty())
-            anNoLineMessageLogger(rawMsgStr,nowPath,txtAttrib);
-        anSetConsoleTextAttribute(previousTxtAttrib)
+    #endif
+    for(std::string::size_type i = 0;(i = rawMsgStr.find(u8"\n", 0)) != std::string::npos;)
+    {
+        anTmpNoLineMessageLoggerMacro(rawMsgStr.substr(0,i++), destMsgStr, tmpPath, txtAttrib)
+        rawMsgStr = rawMsgStr.substr(i);
     }
-    #define anTmpSaveCurrentMessagePathToAVar(newStrVar) \
-        std::string newStrVar = __anMessagePath__;
+    if (!rawMsgStr.empty())
+        anTmpNoLineMessageLoggerMacro(rawMsgStr, destMsgStr, nowPath, txtAttrib)
+    #ifdef anTmpOutputMsgStrVar
+        #ifdef anTmpPrevTxtAtribVar
+            destMsgStr += anSetConsoleTextAttributePrefixString(previousTxtAttrib);
+        #endif
+    #else
+        #ifdef anTmpPrevTxtAtribVar
+            anSetConsoleTextAttribute(previousTxtAttrib)
+        #endif
+    #endif
+}
+
+#if defined anTmpPrevTxtAtribVar\
+        || defined anTmpCurrentMessagePathStrVar\
+        || defined anTmpOutputMsgStrVar
+    #define anTmpSrcMsgStrParamForMsgLoggerMacro(rawMsgStr) rawMsgStr,
+#else
+    #define anTmpSrcMsgStrParamForMsgLoggerMacro(rawMsgStr) rawMsgStr
 #endif
 
-#define anMsg(msg, txtAttrib) {\
-        anTmpSaveCurrentMessagePathToAVar(oldTxtAttrib)\
-        anTmpSaveCurrentMessagePathToAVar(nowMsgPathStr)\
-        anSaveMsgInputToAVar(msg, tmpMsgInputStr)\
-        std::cerr.flush();\
-    }
+#ifdef anTmpOutputMsgStrVar
+    #if defined anTmpPrevTxtAtribVar\
+          || defined anTmpCurrentMessagePathStrVar
+        #define anTmpOutputMsgStrVarParamForMsgLoggerMacro(dstStr) dstStr,
+    #else
+        #define anTmpOutputMsgStrVarParamForMsgLoggerMacro(dstStr) dstStr
+    #endif
+#else
+    #define anTmpOutputMsgStrVarParamForMsgLoggerMacro(dstStr)
+#endif
 
-#define anDbg(msg, condition) if (condition)\
-                                anMsg(u8"=> " << msg << u8"\n", anForegroundCyan)
-#define anInfo(msg) anMsg(u8"   " << msg << u8"\n", anForegroundWhite)
-#define anAck(msg) anMsg(u8"=> " << msg << u8"\n", anForegroundGreen)
-#define anWarning(msg) anMsg(u8"=> " << msg << u8"\n", anForegroundYellow)
-#define anError(msg) anMsg(u8"=> " << msg << u8"\n", anForegroundRed)
+#ifdef anTmpPrevTxtAtribVar
+        #define anTmpTxtAtribVarParamForMsgLoggerMacro(txtAtt) txtAtt,
+    #ifdef anTmpCurrentMessagePathStrVar
+        #define anTmpPrevTxtAtribVarParamForMsgLoggerMacro(preTxtAtt) preTxtAtt,
+    #else
+        #define anTmpPrevTxtAtribVarParamForMsgLoggerMacro(preTxtAtt) preTxtAtt
+    #endif
+#else
+    #define anTmpTxtAtribVarParamForMsgLoggerMacro(txtAtt)
+    #define anTmpPrevTxtAtribVarParamForMsgLoggerMacro(preTxtAtt)
+#endif
+
+#ifdef anTmpCurrentMessagePathStrVar
+    #define anTmpMsgPathParamForMsgLoggerMacro(aPathStr) aPathStr
+#else
+    #define anTmpMsgPathParamForMsgLoggerMacro(aPathStr)
+#endif
+
+#define anTmpMessageLoggerMacro(srcMsgStr, dstMsgStr, textAtt, prevTextAtt, pathStr)\
+    anTmpMessageLogger(anTmpSrcMsgStrParamForMsgLoggerMacro(srcMsgStr)\
+                       anTmpOutputMsgStrVarParamForMsgLoggerMacro(dstMsgStr)\
+                       anTmpTxtAtribVarParamForMsgLoggerMacro(textAtt)\
+                       anTmpPrevTxtAtribVarParamForMsgLoggerMacro(prevTextAtt)\
+                       anTmpMsgPathParamForMsgLoggerMacro(pathStr));
 
 /********************************************************************************/
 
+    #define anLogCode(...) __VA_ARGS__
+
+    #define anMsg(msg, txtAttrib) {\
+            anTmpSaveTextAttributeToATxtAtribVar\
+            anTmpSaveCurrentMessagePathToAMsgPathStrVar\
+            anTmpSaveMsgInputToAStdStrVar(msg, tmpMsgInputStr)\
+            anTmpOutputMsgStrVarDeclaration\
+            anTmpMessageLoggerMacro(tmpMsgInputStr,anTmpOutputMsgStrVar,txtAttrib,anTmpPrevTxtAtribVar,anTmpCurrentMessagePathStrVar)\
+            anTmpOutputMsgStrVarToStdErr\
+            std::cerr.flush();}
+
+    #define anDbg(msg, condition) if (condition)\
+                                    anMsg(u8"=> " << msg << u8"\n", anForegroundCyan)
+    #define anInfo(msg) anMsg(u8"   " << msg << u8"\n", anForegroundWhite)
+    #define anAck(msg) anMsg(u8"=> " << msg << u8"\n", anForegroundGreen)
+    #define anWarning(msg) anMsg(u8"=> " << msg << u8"\n", anForegroundYellow)
+    #define anError(msg) anMsg(u8"=> " << msg << u8"\n", anForegroundRed)
 
 /********************************************************************************/
+
 #else
     #define anLogCode(...)
     #define anMsg(msg)
@@ -413,4 +584,6 @@ static const anTxtAttribType anOriginalConsoleTextAttribute = [](){
     #define anWarning(msg)
     #define anError(msg)
 #endif
+
+/********************************************************************************/
 #endif // ANLOGGER_H

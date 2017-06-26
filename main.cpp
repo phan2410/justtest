@@ -7,14 +7,14 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-//    anSetConsoleTextAttribute(anForegroundCyan);
+    anSetConsoleTextAttribute(anForegroundCyan);
 
-//    anInfo("This Type Is To Provide Info !");
-//    anAck("This Type Is To Show Acknowledgement !");
-//    anWarning("This Type Is To Show Warning !");
-//    anError("This Type Is To Warn !");
+    anInfo("This Type Is To Provide Info !");
+    anAck("This Type Is To Show Acknowledgement !");
+    anWarning("This Type Is To Show Warning !");
+    anError("This Type Is To Warn !");
 
-//    std::cout << "END PROGRAM !" << std::endl;
+    std::cout << "END PROGRAM !" << std::endl;
 
     return a.exec();
 }
