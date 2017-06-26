@@ -311,7 +311,7 @@ static const anTxtAttribType anOriginalConsoleTextAttribute = [](){
         anMsgInputToMsgString(msg, tmp) \
         std::cerr << tmp; \
         anSetConsoleTextAttribute(previousTxtAttrib) \
-    {
+    }
 #endif
 
 #define anDbg(msg, condition) if (condition) \
