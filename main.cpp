@@ -15,6 +15,5 @@ int main(int argc, char *argv[])
     anError("This Type Is To Warn !");
 
     std::cout << "END PROGRAM !" << std::endl;
-
     return a.exec();
 }
