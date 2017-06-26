@@ -91,7 +91,7 @@ static const std::chrono::steady_clock::time_point anThisProgramStartingTimePoin
         anGetCurrentConsoleTextAttribute(destination)
 
     #define anSetConsoleTextAttribute(TextAtrribute) \
-        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), TextAtrribute)
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), TextAtrribute);
 
     #define __anFilePathSlashChar__ u'\\'
 
@@ -109,13 +109,13 @@ static const std::chrono::steady_clock::time_point anThisProgramStartingTimePoin
 
     static bool anGetCurrentConsoleTextAttribute(anTxtAttribType &OutputVar) {
         std::string tmpBuff = std::string(anStdErrBuffer);
-        anTxtAttribType tmp = tmpBuff.find_last_of(u8"\033[") + 2;
+        std::size_t tmp = tmpBuff.find_last_of(u8"\033[") + 1;
         if (tmp != std::string::npos)
         {
             if ((tmpBuff.at(tmp) == u'0') && (tmpBuff.at(tmp+1) == u'm'))
                 OutputVar = 0;
             else if ((tmpBuff.at(tmp) == u'3') && (tmpBuff.at(tmp+2) == u'm'))
-                OutputVar = std::stoi(tmpBuff.substr(m,2));
+                OutputVar = std::stoi(tmpBuff.substr(tmp,2));
             else
                 return false;
             return true;
