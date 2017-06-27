@@ -499,7 +499,7 @@ inline static void anTmpMessageLogger(
         #endif
     #endif
     #ifdef anTmpCurrentMessagePathStrVar
-        std::string nowPath = u8"<-";
+        std::string nowPath = u8" <-";
         nowPath += currentMsgPath;
         std::string tmpPath = nowPath;
         tmpPath += u8"\n";
