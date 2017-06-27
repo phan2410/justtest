@@ -7,7 +7,6 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-
     anInfo("This Type Is To Provide Info !");
     anAck("This Type Is To Show Acknowledgement !");
     anWarning("This Type Is To Show Warning !");

@@ -7,12 +7,16 @@
 #define _anLoggerEnabled 1
 //_anLoggerEnabled Is Zero => Logger Message Is Not Verbosely Positioned
 #define _anPositionEnabled 1
+/************* Performance Flags ************************************************/
 //_anLoggerSafeModeForWindowsEnabled is only used for windows
 //If _anLoggerSafeModeForWindowsEnabled Is Set,
 //Then Logger Message Text Attribute Is Disabled
 //In Return For Thread-Safe Operation
 #define _anLoggerSafeModeForWindowsEnabled 0
-/************* Performance Flags ************************************************/
+//_anLoggerVividModeForLinuxEnabled is only used for linux
+//If _anLoggerVividModeForLinuxEnabled Is Set,
+//Then Logger Message Text Becomes Bold And Brighter
+#define _anLoggerVividModeForLinuxEnabled 0
 #define _anMessagePathTextAttribute anDefaultTextAttribute
 #define _anThreadIdPositionEnabled 1
 #define _anFunctionPositionEnabled 1
@@ -122,10 +126,15 @@ static const std::chrono::steady_clock::time_point anThisProgramStartingTimePoin
             ++tmp;
             if ((tmpBuff.at(tmp) == u'0') && (tmpBuff.at(tmp+1) == u'm'))
                 OutputVar = 0;
-            else if ((tmpBuff.at(tmp) == u'3') && (tmpBuff.at(tmp+2) == u'm'))
-                OutputVar = std::stoi(tmpBuff.substr(tmp,2));
             else
-                return false;
+            {
+                if (tmpBuff.at(tmp) == u'1')
+                    tmp += 2;
+                if ((tmpBuff.at(tmp) == u'3') && (tmpBuff.at(tmp+2) == u'm'))
+                    OutputVar = std::stoi(tmpBuff.substr(tmp,2));
+                else
+                    return false;
+            }
             return true;
         }
         else
@@ -135,10 +144,18 @@ static const std::chrono::steady_clock::time_point anThisProgramStartingTimePoin
         anGetCurrentConsoleTextAttribute(destination)
 
     inline static const std::string anSetConsoleTextAttributePrefixString(anTxtAttribType TxtAttrib) {
-        std::string tmp = u8"\033[";
-        tmp += std::to_string(TxtAttrib);
-        tmp += u8"m";
-        return tmp;
+        if (TxtAttrib)
+        {
+            std::string tmp = u8"\033[";
+            #if _anLoggerVividModeForLinuxEnabled
+                tmp += u8"1;";
+            #endif
+            tmp += std::to_string(TxtAttrib);
+            tmp += u8"m";
+            return tmp;
+        }
+        else
+            return u8"\033[0m";
     }
 
     #define anSetConsoleTextAttribute(TxtAttrib) \
