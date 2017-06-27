@@ -7,7 +7,6 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    anSetConsoleTextAttribute(anForegroundCyan);
 
     anInfo("This Type Is To Provide Info !");
     anAck("This Type Is To Show Acknowledgement !");
