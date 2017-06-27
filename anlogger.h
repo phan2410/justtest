@@ -1,7 +1,8 @@
 #ifndef ANLOGGER_H
 #define ANLOGGER_H
 //PREREQUISITE: -std=c++11
-//NOTICE: Not Guarantee To Be Thread-Safe On Windows
+//NOTICE: On Windows, Only If _anLoggerSafeModeForWindowsEnabled Is Set,
+//              Then An Logger Is Guaranteed To Be Thread-Safe
 /************* Control Flags ****************************************************/
 //_anLoggerEnabled Is Zero => Logger Is Globally Disabled
 #define _anLoggerEnabled 1
