@@ -383,8 +383,7 @@ inline static void anTmpNoLineMessageLogger(
                                           const std::string &aNoLineMessage
                                     #endif
                                     #ifdef anTmpOutputMsgStrVar
-                                        #if defined anTmpPrevTxtAtribVar\
-                                                || defined anTmpCurrentMessagePathStrVar
+                                        #if defined anTmpCurrentMessagePathStrVar
                                             std::string &destMsgStr,
                                         #else
                                             std::string &destMsgStr
@@ -434,8 +433,7 @@ inline static void anTmpNoLineMessageLogger(
 #endif
 
 #ifdef anTmpOutputMsgStrVar
-    #if defined anTmpPrevTxtAtribVar\
-            || defined anTmpCurrentMessagePathStrVar
+    #if defined anTmpCurrentMessagePathStrVar
         #define anTmpOutputMsgStrParamForNoLineMacro(destStr) destStr,
     #else
         #define anTmpOutputMsgStrParamForNoLineMacro(destStr) destStr
