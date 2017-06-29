@@ -7,8 +7,8 @@
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-    QThread::currentThread()->setPriority(QThread::HighestPriority);
-    anAck(QThread::currentThread()->priority());
+    QByteArray test = "iknowit";
+    anVar(test.toHex());
 
     return a.exec();
 }

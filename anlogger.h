@@ -607,6 +607,8 @@ inline static void anTmpMessageLogger(
     #define anWarning(msg) anMsg(u8"=> " << msg << u8"\n", anForegroundYellow)
     #define anError(msg) anMsg(u8"=> " << msg << u8"\n", anForegroundRed)
 
+    #define anVar(var) anInfo(#var << u8" = " << var)
+
 /********************************************************************************/
 
 #else
