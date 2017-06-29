@@ -7,8 +7,12 @@
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-    QByteArray test = "iknowit";
-    anVar(test.toHex());
+
+    try{
+        if (abc)
+            std::cout << "okay message will be shown !" << std::endl;
+    } catch (...) {}
+
 
     return a.exec();
 }
