@@ -13,16 +13,16 @@
 //If _anLoggerSafeModeForWindowsEnabled Is Set,
 //Then Logger Message Text Attribute Is Disabled
 //In Return For Thread-Safe Operation
-#define _anLoggerSafeModeForWindowsEnabled 0
+#define _anLoggerSafeModeForWindowsEnabled 1
 //_anLoggerVividModeForLinuxEnabled is only used for linux
 //If _anLoggerVividModeForLinuxEnabled Is Set,
 //Then Logger Message Text Becomes Bold And Brighter
 #define _anLoggerVividModeForLinuxEnabled 0
 #define _anMessagePathTextAttribute anDefaultTextAttribute
-#define _anThreadIdPositionEnabled 1
-#define _anFunctionPositionEnabled 1
+#define _anThreadIdPositionEnabled 0
+#define _anFunctionPositionEnabled 0
 #define _anFilePositionEnabled 1
-#define _anLinePositionEnabled 1
+#define _anLinePositionEnabled 0
 #define _anTimePositionEnabled 1
 /********************************************************************************/
 #include <stdio.h>
@@ -165,34 +165,12 @@ static char anStdErrBuffer[BUFSIZ];
         || _anLinePositionEnabled || _anTimePositionEnabled)
 
     #if _anThreadIdPositionEnabled
-        static std::vector<long long> anStdThreadIdListOfCurrentProgram;
-        static std::vector<unsigned short> anNormalizedThreadIdListOfCurrentProgram;
-        inline static int anStdThreadIdListOfCurrentProgramIndexOf(const long long & aThreadId) {
-            const int maxIndex = static_cast<int>(anStdThreadIdListOfCurrentProgram.size());
-            for (int tmp = 0; tmp < maxIndex; ++tmp) {
-                if (anStdThreadIdListOfCurrentProgram[tmp] == aThreadId)
-                {
-                    return tmp;
-                }
-            }
-            return -1;
-        }
-        inline static unsigned short anGetCurrentNormalizedThreadId(const std::thread::id &currentThreadId) {
+        inline static long long anGetCurrentStdThreadId(const std::thread::id &currentThreadId) {
             std::stringstream tmp;
             tmp << currentThreadId;
-            long long currentStdThreadId = std::stoll(tmp.str());
-            int tmpIndex = anStdThreadIdListOfCurrentProgramIndexOf(currentStdThreadId);
-            if (tmpIndex == -1)
-            {
-                anStdThreadIdListOfCurrentProgram.push_back(currentStdThreadId);
-                unsigned short tmpOut = anNormalizedThreadIdListOfCurrentProgram.size();
-                anNormalizedThreadIdListOfCurrentProgram.push_back(tmpOut);
-                return tmpOut;
-            }
-            else
-                return tmpIndex;
+            return std::stoll(tmp.str());
         }
-        #define __anNormalizedThreadId__ anGetCurrentNormalizedThreadId(std::this_thread::get_id())
+        #define __anStdThreadId__ anGetCurrentStdThreadId(std::this_thread::get_id())
     #endif
 
     #if _anFilePositionEnabled
@@ -221,9 +199,9 @@ static char anStdErrBuffer[BUFSIZ];
             #if _anThreadIdPositionEnabled
                 #if _anFunctionPositionEnabled || _anFilePositionEnabled\
                     || _anLinePositionEnabled
-                    const unsigned short &currentThreadId,
+                    const long long &currentThreadId,
                 #else
-                    const unsigned short &currentThreadId
+                    const long long &currentThreadId
                 #endif
             #endif
             #if _anFunctionPositionEnabled
@@ -283,9 +261,9 @@ static char anStdErrBuffer[BUFSIZ];
 
     #if _anThreadIdPositionEnabled
         #if _anFunctionPositionEnabled || _anFilePositionEnabled || _anLinePositionEnabled
-            #define anTmpThreadIdParamForMsgPathMacro __anNormalizedThreadId__,
+            #define anTmpThreadIdParamForMsgPathMacro __anStdThreadId__,
         #else
-            #define anTmpThreadIdParamForMsgPathMacro __anNormalizedThreadId__
+            #define anTmpThreadIdParamForMsgPathMacro __anStdThreadId__
         #endif
     #else
         #define anTmpThreadIdParamForMsgPathMacro
@@ -591,7 +569,7 @@ inline static void anTmpMessageLogger(
                                     anMsg(u8"=> " << msg << u8"\n", anForegroundCyan)
     #define anInfo(msg) anMsg(u8"   " << msg << u8"\n", anForegroundWhite)
     #define anAck(msg) anMsg(u8"=> " << msg << u8"\n", anForegroundGreen)
-    #define anWarning(msg) anMsg(u8"=> " << msg << u8"\n", anForegroundYellow)
+    #define anWarn(msg) anMsg(u8"=> " << msg << u8"\n", anForegroundYellow)
     #define anError(msg) anMsg(u8"=> " << msg << u8"\n", anForegroundRed)
 
     #define anVar(var) anInfo(#var << u8" = " << var)
@@ -604,7 +582,7 @@ inline static void anTmpMessageLogger(
     #define anDbg(msg, condition)
     #define anInfo(msg)
     #define anAck(msg)
-    #define anWarning(msg)
+    #define anWarn(msg)
     #define anError(msg)
     #define anVar(var)
 #endif
