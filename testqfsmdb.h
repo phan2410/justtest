@@ -14,6 +14,10 @@ public:
 signals:
     void directTransitionRequest(const QString &);
     void outerTestSignal();
+
+    void signalInit();
+    void signalA();
+    void signalB();
 public slots:
 };
 

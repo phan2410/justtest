@@ -62,5 +62,24 @@ int main(int argc, char *argv[])
 //    anAck(notificationCode);
 //    anAck("errorCode: " << notificationCode);
 
+//    typedef QPair<QByteArray,QString> CommandMessage;
+
+//    CommandMessage testCMsg;
+//    testCMsg.first = QByteArray("this is qbytearray");
+//    testCMsg.second = "this is key";
+
+//    CommandMessage testCMsg2;
+//    testCMsg2.first = QByteArray("qybetarray 2");
+//    testCMsg2.second = "key 2";
+
+//    CommandMessage testObj2;
+//    testObj2 = testCMsg;
+//    qDebug() << testObj2.first.toHex() << "--" << testObj2.second;
+//    qDebug() << "--=====-";
+//    testObj2 = testCMsg2;
+//    qDebug() << testObj2.first.toHex() << "--" << testObj2.second;
+
+
+
     return a.exec();
 }

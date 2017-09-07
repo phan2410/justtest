@@ -4,12 +4,6 @@
 #include <QObject>
 #include <QStateMachine>
 #include "testqfsmdb.h"
-#include "testqfsmstate1.h"
-#include "testqfsmstate2.h"
-#include "testqfsmstate3.h"
-#include "testqfsmstate4.h"
-#include "testqfsmstate5.h"
-#include "testqfsmstate6.h"
 #include "directtransition.h"
 
 

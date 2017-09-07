@@ -12,15 +12,12 @@ TEMPLATE = app
 SOURCES += main.cpp \
     test.cpp \
     testqfsm.cpp \
-    testqfsmstate1.cpp \
     directtransition.cpp \
     testqfsmdb.cpp \
-    testqfsmstate2.cpp \
-    testqfsmstate3.cpp \
-    testsignal.cpp \
-    testqfsmstate4.cpp \
-    testqfsmstate5.cpp \
-    testqfsmstate6.cpp
+    testqfsm1.cpp \
+    testqfsm2.cpp \
+    testqfsm3.cpp \
+    testqfsm4.cpp
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked deprecated (the exact warnings
@@ -37,12 +34,9 @@ HEADERS += \
     anlogger.h \
     test.h \
     testqfsm.h \
-    testqfsmstate1.h \
     directtransition.h \
     testqfsmdb.h \
-    testqfsmstate2.h \
-    testqfsmstate3.h \
-    testsignal.h \
-    testqfsmstate4.h \
-    testqfsmstate5.h \
-    testqfsmstate6.h
+    testqfsm1.h \
+    testqfsm2.h \
+    testqfsm3.h \
+    testqfsm4.h
