@@ -8,7 +8,7 @@
 class testqfsm1 : public QState
 {
 public:
-    testqfsm1();
+    testqfsm1(testQFSMDB * database, quint16 delayTimeInMSec);
 protected:
     void onEntry(QEvent *) override;
     void onExit(QEvent *) override;

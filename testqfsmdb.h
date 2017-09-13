@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include "anlogger.h"
+#include <QTimer>
 #include <QCoreApplication>
 
 class testQFSMDB : public QObject
@@ -19,6 +20,10 @@ signals:
     void signalA();
     void signalB();
 public slots:
+    void startTimerEmitSignalA();
+    void emitSignalA();
+private:
+    QTimer invoker;
 };
 
 #endif // TESTQFSMDB_H

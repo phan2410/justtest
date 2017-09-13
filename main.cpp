@@ -79,7 +79,27 @@ int main(int argc, char *argv[])
 //    testObj2 = testCMsg2;
 //    qDebug() << testObj2.first.toHex() << "--" << testObj2.second;
 
+//    QThread * aThread = new QThread();
+//    testQFSM * aTestQFSM = new testQFSM();
+//    aTestQFSM->moveToThread(aThread);
+//    QObject::connect(aThread, &QThread::started, aTestQFSM, &testQFSM::start);
+//    aThread->start();
 
+//    QString a1="iaman";
+//    QString a2="iaman";
+//    qDebug() << (a1==a2);
+
+//    anError("main run");
+
+//    test * testObj = new test();
+//    QThread * mainTestThread = new QThread();
+//    testObj->moveToThread(mainTestThread);
+//    QObject::connect(mainTestThread, &QThread::started, testObj, &test::init);
+
+
+//    anWarn("START");
+//    mainTestThread->start();
+//    anWarn("TEST THREAD STARTED");
 
     return a.exec();
 }

@@ -8,16 +8,18 @@ testqfsm1::testqfsm1(testQFSMDB * database, quint16 delayTimeInMSec) :
     timer.setSingleShot(true);
     QObject::connect(&timer, &QTimer::timeout, this, [database](){
         anAck("Start TEST !");
-        emit database->signalInit();
+        emit database->directTransitionRequest("state2");
     });
 }
 
 void testqfsm1::onEntry(QEvent *)
 {
     anAck("State Entered");
+    timer.start();
 }
 
 void testqfsm1::onExit(QEvent *)
 {
     anAck("Leave State");
+    timer.stop();
 }

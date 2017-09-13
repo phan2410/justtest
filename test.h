@@ -2,7 +2,11 @@
 #define TEST_H
 
 #include <QObject>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QThread>
 #include <QDebug>
+#include "testqfsm.h"
 
 class test : public QObject
 {
@@ -18,10 +22,19 @@ public:
         PendingMessageListClear
     };
     Q_ENUM(Notification)
+    void init();
 signals:
     void emitTestSignal(QString = NULL);
+    void signal1();
 public slots:
     void selfReceive(QString data = NULL);
+    void slotA();
+    void slotB();
+    void repRandomSignal();
+private:
+    QThread * testInsideThread;
+    testQFSM * testStateMachine;
+    QSqlDatabase localDb;
 };
 
 #endif // TEST_H
